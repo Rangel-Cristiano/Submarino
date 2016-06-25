@@ -7,7 +7,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-JNIEXPORT jstring JNICALL Java_submarino_getChar(JNIEnv *, jobject);
+JNIEXPORT jstring JNICALL Java_submarino_Submarino_getChar(JNIEnv *, jobject);
 
 #ifdef __cplusplus
 }

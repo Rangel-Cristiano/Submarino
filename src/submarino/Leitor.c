@@ -8,7 +8,7 @@
 #define BUF_LEN 10
 
 JNIEXPORT jstring JNICALL
-Java_submarino_getChar(JNIEnv *env, jobject obj) {
+Java_submarino_Submarino_getChar(JNIEnv *env, jobject obj) {
     char rd[BUF_LEN];
 
     int file = open(DEVICE_NAME, O_RDWR);
