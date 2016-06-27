@@ -1,10 +1,13 @@
 #!/bin/bash
 
-javac Submarino.java
+javac Game.java
 cd ..
-javah -jni submarino.Submarino
-cd submarino
+javah -jni submarino.Game
+cd submarino/driver
 gcc -fPIC -I/usr/lib/jvm/java-7-openjdk-amd64/include -I/usr/lib/jvm/java-7-openjdk-amd64/include/linux -shared -o libleitor.so Leitor.c
+cd ..
+rm -rf libleitor.so
+cp driver/libleitor.so .
 
 sudo rmmod driver.ko
 sudo rm /dev/submarino

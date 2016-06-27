@@ -1,131 +1,119 @@
-#include <linux/kernel.h>	
-#include <linux/module.h>	
+#include <linux/kernel.h>
+#include <linux/module.h>
 #include <linux/fs.h>
-#include <asm/uaccess.h>	
+#include <asm/uaccess.h>
+#include "driver.h"
 
-/*-----------------------------------------------------------------------------*/
-MODULE_LICENSE("GPL");
-MODULE_AUTHOR("Andre Luis Martinotto");
-MODULE_DESCRIPTION("Disciplina SO");
+#define DEVICE_NAME "submarino"
 
-/*----------------------------------------------------------------------------*/
-#define DEVICE 60
-#define DEVICE_NAME "so"
-#define BUF_MSG 80
+//Prototipo das funcoes
 
-/*----------------------------------------------------------------------------*/
+//funcao que e executada ao inserir o modulo
+int init_module(void);
 
-int init_device(void);
-void cleanup_device(void);
-static int device_open(struct inode *inode, struct file *file);
-static int device_release(struct inode *inode, struct file *file);
-static ssize_t device_read(struct file *file, char __user *buffer, size_t length,loff_t * offset);
-static ssize_t device_write(struct file *file, const char __user * buffer, size_t length, loff_t * offset);
+//funcao que e executada ao remover o modulo
+int device_init(void);
+void device_exit(void);
+static int device_open(struct inode *, struct file *);
+static int device_release(struct inode *, struct file *);
+static ssize_t device_read(struct file *, char *, size_t, loff_t *);
+static ssize_t device_write(struct file *, const char *, size_t, loff_t *);
+long device_ioctl(struct file *, unsigned int, unsigned long);
 
-/*----------------------------------------------------------------------------*/
+module_init(device_init);
+module_exit(device_exit);
 
-module_init(init_device);
-module_exit(cleanup_device)
-
-/*----------------------------------------------------------------------------*/
-static int aberto = 0;
-static char mensagem[BUF_MSG];
-static char *ptr;
-
-
-
-/*----------------------------------------------------------------------------*/
-struct file_operations fops = {
+//Define qual funcao vai realizar qual atividade
+static struct file_operations fops = {
 	.read = device_read,
 	.write = device_write,
 	.open = device_open,
-	.release = device_release,	
+	.release = device_release,
+	.unlocked_ioctl = device_ioctl,
 };
 
-/*----------------------------------------------------------------------------*/
-int init_device(){
+//Variaveis globais sao declaras como estaticas
+static int device = 60 ;
+static int open = 0 ;
+static char buffer[BUF_LEN];
+static char *rptr ;
+static char *wptr ;
 
-	int ret;
+//Funcao chamado quando o modulo e carregado
 
-	ret = register_chrdev(DEVICE, DEVICE_NAME, &fops);
-
-	if (ret < 0) {
-		printk("Erro ao carregar o dispositivo %d\n.",DEVICE);	
+int device_init(){
+	//cria o dispositivo
+	int ret = register_chrdev(device, DEVICE_NAME, &fops);
+	if (ret < 0){
+		printk("Nao foi possivel abrir o dispositivo %d.\n", device);
 		return ret;
 	}
-
-	printk("O dispositivo %d foi carregado.\n", DEVICE);
-
+	memset(buffer, 0 , BUF_LEN);
+	printk("Dispositivo carrregado.\n");
 	return 0;
 }
 
-/*----------------------------------------------------------------------------*/
+//Remove o dispositivo
 
-void cleanup_device(){
-
-	unregister_chrdev(DEVICE, DEVICE_NAME);
-	printk("O dispositivo %d foi descarregado.\n", DEVICE);
+void device_exit(){
+	unregister_chrdev(device, DEVICE_NAME);
+	printk("Dispositivo descarregado.\n");
 }
 
-
-/*----------------------------------------------------------------------------*/
-static int device_open(struct inode *inode, struct file *file){
-	
-
-	if (aberto){
+//Chamada quando o processo tenta abir o dispositivo
+static int device_open(struct inode *nd, struct file *fd){
+	//verifica se ja tem alguem acessando o dispositivo
+	if (open) {
 		return -EBUSY;
 	}
-	aberto++;
-	ptr = mensagem;
+	open++;
+	rptr = wptr = buffer;
 	try_module_get(THIS_MODULE);
 	return 0;
 }
 
-/*----------------------------------------------------------------------------*/
-static int device_release(struct inode *inode, struct file *file){
-	
-	aberto--;
-
+//Chamada quando um proceso fecha o arquivo
+static int device_release(struct inode *nd, struct file *fp){
+	//libera o acesso ao dispositivo
+	if (open) {
+		open--;
+	}
 	module_put(THIS_MODULE);
 	return 0;
 }
 
-/*----------------------------------------------------------------------------*/
-static ssize_t device_read(struct file *file, char __user * buffer, size_t length, loff_t * offset){
-
-	int bytes_read = 0;
-
-	if (*ptr == 0){
-		return 0;
+//Chamada quando um processo tenta ler o arquivo aberto
+static ssize_t device_read(struct file *fp, char *buff, size_t lenght, loff_t *offset){
+	int nbytes = strlen(rptr);
+	if (nbytes > lenght) {
+		nbytes = lenght;
 	}
-
-	while (length && *ptr) {
-
-		put_user(*(ptr++), buffer++);
-		length--;
-		bytes_read++;
-	}
-	printk("Leu %d bytes correspondendo a mensagem: %s", bytes_read, mensagem);
-
-	return bytes_read;
+	copy_to_user(buff, rptr, nbytes);
+	rptr += nbytes;
+	return nbytes;
 }
 
-/*----------------------------------------------------------------------------*/
-static ssize_t device_write(struct file *file, const char __user * buffer, size_t length, loff_t * offset){
-	
-	int i;
+//Chamada quando um processo tenta escrever no arquivo
 
-	for (i = 0; i < length && i < BUF_MSG; i++){
-		get_user(mensagem[i], buffer + i);
+static ssize_t device_write(struct file *fp, const char *buff, size_t lenght, loff_t *offset){
+	int nbytes = BUF_LEN - (wptr - buffer);
+	if (nbytes > lenght) {
+		nbytes = lenght;
 	}
-
-	printk("Escreveu a mensagem: %s\n",mensagem);
-
-	ptr = mensagem;
-
-	return i;
+	copy_from_user(wptr, buff, nbytes);
+	wptr += nbytes;
+	return nbytes;
 }
 
-/*----------------------------------------------------------------------------*/
-
-
+long device_ioctl(struct file *file, unsigned int ioctl_num, unsigned long ioctl_param){
+	switch (ioctl_num) {
+		case IOCTL_SET_CHAR:
+			device_write(file, (char * ) ioctl_param, BUF_LEN, 0);
+			break;
+		case IOCTL_GET_CHAR:
+			device_read(file, (char *) ioctl_param, BUF_LEN, 0);
+			break;
+		default: return FAILURE;
+	}
+	return SUCCESS;
+}
