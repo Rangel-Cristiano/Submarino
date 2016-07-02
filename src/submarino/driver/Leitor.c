@@ -11,7 +11,7 @@
 #define BUF_LEN_SUB 2
 
 JNIEXPORT jstring JNICALL
-Java_submarino_Game_getChar(JNIEnv *env, jobject obj) {
+Java_submarino_GameView_getChar(JNIEnv *env, jobject obj) {
     char rd[BUF_LEN_SUB];
 
     int file = open(DEVICE_NAME, O_RDWR);
