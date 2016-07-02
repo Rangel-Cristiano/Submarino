@@ -7,7 +7,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-JNIEXPORT jstring JNICALL Java_submarino_Game_getChar(JNIEnv *, jobject);
+JNIEXPORT jstring JNICALL Java_submarino_GameView_getChar(JNIEnv *, jobject);
 JNIEXPORT void JNICALL Java_Escritor_setChar(JNIEnv *, jobject, jstring);
 
 #ifdef __cplusplus

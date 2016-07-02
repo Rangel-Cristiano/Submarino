@@ -1,5 +1,3 @@
-import java.awt.RenderingHints.Key;
-import java.awt.event.KeyEvent;
 import java.util.Scanner;
 
 public final class Escritor {
@@ -13,7 +11,7 @@ public final class Escritor {
       new Escritor();
     }
 
-    Escritor() {
+    Escritor() {     
       Scanner scanner = new Scanner(System.in);      
       while (true) {
         System.out.println("Próxima jogada: ");        
@@ -21,5 +19,4 @@ public final class Escritor {
         setChar(text);       
       }      
     }
-
 }

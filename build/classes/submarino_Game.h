@@ -77,14 +77,6 @@ extern "C" {
 #define submarino_Game_serialVersionUID 2673458971256075116LL
 #undef submarino_Game_EXIT_ON_CLOSE
 #define submarino_Game_EXIT_ON_CLOSE 3L
-/*
- * Class:     submarino_Game
- * Method:    getChar
- * Signature: ()Ljava/lang/String;
- */
-JNIEXPORT jstring JNICALL Java_submarino_Game_getChar
-  (JNIEnv *, jobject);
-
 #ifdef __cplusplus
 }
 #endif

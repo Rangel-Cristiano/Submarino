@@ -62,7 +62,7 @@ public final class GameView {private final JPanel mPanel = new JPanel(new Border
         mBoardLabels[0][0].setIcon(mBoatIcon);
         
         Random random = new Random();      
-        for (int i = 0; i < 15; i++) {  
+        for (int i = 0; i < 20; i++) {  
           int randLine = 0, randColumn = 0;
           while (randLine == 0 && randColumn == 0){
                randLine = random.nextInt(SIZE);
